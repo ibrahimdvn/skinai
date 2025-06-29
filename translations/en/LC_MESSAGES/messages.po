@@ -1,0 +1,292 @@
+# English translations for SkinAI.
+# Copyright (C) 2025 SkinAI Team
+# This file is distributed under the same license as the SkinAI project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SkinAI 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-06-29 19:12+0300\n"
+"PO-Revision-Date: 2025-06-29 19:12+0300\n"
+"Last-Translator: SkinAI Team\n"
+"Language: en\n"
+"Language-Team: English\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Manual\n"
+
+msgid "Ana Sayfa"
+msgstr "Home"
+
+msgid "Hakkinda"
+msgstr "About"
+
+msgid "Yapay zeka destekli cilt lekesi analizi sistemi"
+msgstr "AI-powered skin lesion analysis system"
+
+msgid "Model Doğruluğu: 92.5%"
+msgstr "Model Accuracy: 92.5%"
+
+msgid "8,858 Görüntü ile Eğitildi"
+msgstr "Trained with 8,858 Images"
+
+msgid "Cilt Lekesi Fotoğrafı Yükle"
+msgstr "Upload Skin Lesion Photo"
+
+msgid "Fotoğraf Seçin veya Sürükleyip Bırakın"
+msgstr "Select Photo or Drag and Drop"
+
+msgid "Desteklenen formatlar: JPG, PNG, GIF, BMP"
+msgstr "Supported formats: JPG, PNG, GIF, BMP"
+
+msgid "Maksimum dosya boyutu: 16MB"
+msgstr "Maximum file size: 16MB"
+
+msgid "Dosya seçilmedi"
+msgstr "No file selected"
+
+msgid "Analiz Et"
+msgstr "Analyze"
+
+msgid "İyi Huylu (Benign)"
+msgstr "Benign"
+
+msgid "Genellikle zararsız lezyonlar. Düzenli takip önerilir."
+msgstr "Usually harmless lesions. Regular follow-up is recommended."
+
+msgid "Melanom"
+msgstr "Melanoma"
+
+msgid "Kötü huylu deri kanseri. Acil tıbbi müdahale gereklidir."
+msgstr "Malignant skin cancer. Urgent medical intervention required."
+
+msgid "Nevüs (Ben)"
+msgstr "Nevus (Mole)"
+
+msgid "Pigment lezyonu. Değişiklikleri takip edilmelidir."
+msgstr "Pigment lesion. Changes should be monitored."
+
+msgid "Nasıl Kullanılır?"
+msgstr "How to Use?"
+
+msgid "Fotoğraf Çekme İpuçları:"
+msgstr "Photo Taking Tips:"
+
+msgid "Lezyonu net bir şekilde çekin"
+msgstr "Take a clear photo of the lesion"
+
+msgid "Yeterli ışık kullanın"
+msgstr "Use adequate lighting"
+
+msgid "Lezyonu tam ortalayın"
+msgstr "Center the lesion completely"
+
+msgid "Yakından çekin (detaylar görünsün)"
+msgstr "Take close-up photos (details should be visible)"
+
+msgid "Güvenlik:"
+msgstr "Security:"
+
+msgid "Yüklenen fotoğraflar geçicidir"
+msgstr "Uploaded photos are temporary"
+
+msgid "Kişisel bilgiler saklanmaz"
+msgstr "Personal information is not stored"
+
+msgid "Güvenli analiz süreci"
+msgstr "Secure analysis process"
+
+msgid "Hızlı sonuç alın"
+msgstr "Get quick results"
+
+# JavaScript messages
+msgid "Lütfen bir dosya seçin!"
+msgstr "Please select a file!"
+
+msgid "Analiz Ediliyor..."
+msgstr "Analyzing..."
+
+msgid "Dosya boyutu çok büyük! Maksimum 16MB olmalıdır."
+msgstr "File size too large! Maximum should be 16MB."
+
+# Footer and other
+msgid "SkinAI © 2025| Yapay Zeka Destekli Cilt Analizi"
+msgstr "SkinAI © 2025| AI-Powered Skin Analysis"
+
+# Result page messages
+msgid "Analiz Sonucu"
+msgstr "Analysis Result"
+
+msgid "Yapay zeka analizi tamamlandı"
+msgstr "AI analysis completed"
+
+msgid "Yüklenen Görüntü"
+msgstr "Uploaded Image"
+
+msgid "Sınıflandırma Sonuçları"
+msgstr "Classification Results"
+
+msgid "AI Önerisi"
+msgstr "AI Recommendation"
+
+msgid "ABCDE Kuralı Analizi"
+msgstr "ABCDE Rule Analysis"
+
+msgid "Bu fotoğrafa özel ABCDE kuralı analizi:"
+msgstr "ABCDE rule analysis specific to this photo:"
+
+msgid "Yeni Analiz Yap"
+msgstr "New Analysis"
+
+# Medical terms
+msgid "İyi huylu lezyon - Genellikle zararsız"
+msgstr "Benign lesion - Usually harmless"
+
+msgid "Melanom - Kötü huylu, acil tıbbi müdahale gerekli"
+msgstr "Melanoma - Malignant, urgent medical intervention required"
+
+msgid "Nevüs (Ben) - Genellikle zararsız pigment lezyonu"
+msgstr "Nevus (Mole) - Usually harmless pigment lesion"
+
+# Offline page
+msgid "Çevrimdışı"
+msgstr "Offline"
+
+msgid "İnternet bağlantınız yok gibi görünüyor. Bağlantınızı kontrol edin ve tekrar deneyin."
+msgstr "It seems you don't have an internet connection. Check your connection and try again."
+
+msgid "Bağlantıyı Kontrol Et"
+msgstr "Check Connection"
+
+msgid "Çevrimdışı Özellikler:"
+msgstr "Offline Features:"
+
+msgid "Uygulama Yüklü"
+msgstr "App Installed"
+
+msgid "SkinAI cihazınızda yüklü ve hazır"
+msgstr "SkinAI is installed and ready on your device"
+
+msgid "Bilgiler Mevcut"
+msgstr "Information Available"
+
+msgid "Temel bilgilere çevrimdışı erişebilirsiniz"
+msgstr "You can access basic information offline"
+
+msgid "Otomatik Senkronizasyon"
+msgstr "Automatic Synchronization"
+
+msgid "Bağlantı geldiğinde veriler senkronize olur"
+msgstr "Data synchronizes when connection is restored"
+
+# About page translations
+msgid "Yapay zeka teknolojisi ile cilt sağlığı analizi"
+msgstr "Skin health analysis with artificial intelligence technology"
+
+msgid "SkinAI Nedir?"
+msgstr "What is SkinAI?"
+
+msgid "SkinAI, gelişmiş yapay zeka algoritmaları kullanarak cilt lekesi analizlerini hızlı ve güvenilir bir şekilde gerçekleştiren modern bir web uygulamasıdır."
+msgstr "SkinAI is a modern web application that performs skin lesion analysis quickly and reliably using advanced artificial intelligence algorithms."
+
+msgid "Teknoloji:"
+msgstr "Technology:"
+
+msgid "Derin Öğrenme (Deep Learning)"
+msgstr "Deep Learning"
+
+msgid "Konvolüsyonel Sinir Ağları (CNN)"
+msgstr "Convolutional Neural Networks (CNN)"
+
+msgid "Özellikler:"
+msgstr "Features:"
+
+msgid "3 Sınıf Analizi (Melanoma, Benign, Nevüs)"
+msgstr "3-Class Analysis (Melanoma, Benign, Nevus)"
+
+msgid "Hızlı Görüntü İşleme"
+msgstr "Fast Image Processing"
+
+msgid "Güvenilir Sonuçlar"
+msgstr "Reliable Results"
+
+msgid "Kullanıcı Dostu Arayüz"
+msgstr "User Friendly Interface"
+
+msgid "Hızlı Analiz"
+msgstr "Fast Analysis"
+
+msgid "Görüntü yüklendikten sonra saniyeler içinde detaylı analiz sonuçları alın."
+msgstr "Get detailed analysis results within seconds after uploading the image."
+
+msgid "Güvenli İşleme"
+msgstr "Secure Processing"
+
+msgid "Yüklenen görüntüler güvenli bir şekilde işlenir ve kişisel veriler korunur."
+msgstr "Uploaded images are processed securely and personal data is protected."
+
+msgid "Detaylı Görünüm"
+msgstr "Detailed View"
+
+msgid "Her analiz için detaylı sonuçlar ve güven oranları görüntülenir."
+msgstr "Detailed results and confidence rates are displayed for each analysis."
+
+msgid "Nasıl Çalışır?"
+msgstr "How Does It Work?"
+
+msgid "1. Yükleme"
+msgstr "1. Upload"
+
+msgid "Cilt lekesi fotoğrafınızı sisteme yükleyin"
+msgstr "Upload your skin lesion photo to the system"
+
+msgid "2. Analiz"
+msgstr "2. Analysis"
+
+msgid "AI algoritmaları görüntüyü analiz eder"
+msgstr "AI algorithms analyze the image"
+
+msgid "3. Sonuç"
+msgstr "3. Result"
+
+msgid "Detaylı sonuçlar ve güven oranları gösterilir"
+msgstr "Detailed results and confidence rates are shown"
+
+msgid "4. Rapor"
+msgstr "4. Report"
+
+msgid "Sonuçları yazdırabilir veya kaydedebilirsiniz"
+msgstr "You can print or save the results"
+
+msgid "Analiz Edilen Lezyon Türleri"
+msgstr "Types of Lesions Analyzed"
+
+msgid "Genellikle zararsız olan cilt lezyonları. Düzenli takip önerilen durumlar."
+msgstr "Usually harmless skin lesions. Regular follow-up is recommended."
+
+msgid "Kötü huylu deri kanseri türü. Acil tıbbi değerlendirme gerektirir."
+msgstr "Type of malignant skin cancer. Requires urgent medical evaluation."
+
+msgid "Pigmentli cilt lezyonları. Değişikliklerin takip edilmesi önemli."
+msgstr "Pigmented skin lesions. It is important to monitor changes."
+
+msgid "Teknoloji Yığını"
+msgstr "Technology Stack"
+
+msgid "Backend:"
+msgstr "Backend:"
+
+msgid "Frontend:"
+msgstr "Frontend:"
+
+msgid "Responsive Design"
+msgstr "Responsive Design"
+
+msgid "Şimdi Deneyin!"
+msgstr "Try It Now!"
+
+msgid "Analiz Başlat"
+msgstr "Start Analysis"
+ 

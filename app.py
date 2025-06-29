@@ -2,7 +2,8 @@ import os
 import sys
 import json
 import numpy as np
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, session
+from translations import get_translation, get_supported_languages
 from werkzeug.utils import secure_filename
 from PIL import Image
 import tensorflow as tf
@@ -14,7 +15,12 @@ from urllib.parse import quote as url_quote
 # Encoding ayarları
 import locale
 import codecs
+import os
 sys.stdout.reconfigure(encoding='utf-8')
+
+# Windows encoding fix
+if os.name == 'nt':  # Windows
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 # Flask uygulamasını oluştur
 app = Flask(__name__)
@@ -28,6 +34,39 @@ MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+# Manuel çeviri sistemi konfigürasyonu
+app.config['LANGUAGES'] = get_supported_languages()
+app.config['DEFAULT_LANGUAGE'] = 'tr'
+
+def get_current_language():
+    """Kullanıcının dil tercihini belirler."""
+    # URL parametresinden dil kontrolü
+    if request.args.get('lang'):
+        session['language'] = request.args.get('lang')
+    
+    # Session'dan dil tercihi
+    if 'language' in session:
+        if session['language'] in app.config['LANGUAGES'].keys():
+            return session['language']
+    
+    # Browser dil tercihi
+    return request.accept_languages.best_match(app.config['LANGUAGES'].keys()) or app.config['DEFAULT_LANGUAGE']
+
+def translate(text):
+    """Metni geçerli dile çevirir."""
+    current_lang = get_current_language()
+    return get_translation(text, current_lang)
+
+@app.context_processor
+def inject_translation_vars():
+    """Template'lere çeviri değişkenlerini enjekte eder."""
+    return {
+        'LANGUAGES': app.config['LANGUAGES'],
+        'CURRENT_LANGUAGE': get_current_language(),
+        '_': translate,  # Çeviri fonksiyonu
+        'get_translation': translate  # Alternatif kullanım
+    }
 
 # Global değişkenler
 model = None
@@ -480,6 +519,13 @@ def uploaded_file(filename):
 def about():
     """Hakkında sayfası."""
     return render_template('about.html')
+
+@app.route('/set_language/<language>')
+def set_language(language=None):
+    """Dil değiştirme endpoint'i."""
+    if language in app.config['LANGUAGES'].keys():
+        session['language'] = language
+    return redirect(request.referrer or url_for('index'))
 
 @app.route('/api/model-info')
 def model_info():

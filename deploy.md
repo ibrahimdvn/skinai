@@ -12,7 +12,7 @@
 4. "Create repository" tıklayın
 
 # Terminal'de:
-git remote add origin https://github.com/KULLANICI_ADI/skinai.git
+git remote add origin https://github.com/ibrahimdvn/skinai.git
 git branch -M main
 git push -u origin main
 ```
