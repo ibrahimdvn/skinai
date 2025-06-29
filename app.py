@@ -468,25 +468,17 @@ def is_skin_like_image(image_path):
         if lesion_ratio < 0.15:  # %15'e düşürdük (eskiden %30 idi)
             return False, f"Görüntüde yeterli cilt/lezyon benzeri renk bulunamadı (Oran: %{lesion_ratio*100:.1f}). Tipik cilt renkleri tespit edilmedi."
         
-        # 8. ÇOK PARLAK/KOYU KONTROL
+        # 8. ÇOK PARLAK/KOYU KONTROL (gevşetildi)
         mean_brightness = np.mean(gray)
-        if mean_brightness > 200:
-            return False, "Görüntü çok parlak. Cilt lezyonu fotoğrafları genellikle orta tonlarda olur."
-        if mean_brightness < 30:
-            return False, "Görüntü çok koyu. Cilt lezyonu detayları görünmüyor."
+        if mean_brightness > 240:  # 200'den 240'a gevşettik
+            return False, "Görüntü aşırı parlak. Cilt detayları görünmüyor."
+        if mean_brightness < 15:  # 30'dan 15'e gevşettik
+            return False, "Görüntü aşırı koyu. Hiçbir detay görünmüyor."
         
-        # 9. HOMOJEN ALAN KONTROLÜ - Çok büyük düz alanlar varsa şüpheli
-        blur = cv2.GaussianBlur(gray, (15, 15), 0)
-        _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        if contours:
-            largest_contour = max(contours, key=cv2.contourArea)
-            largest_area = cv2.contourArea(largest_contour)
-            area_ratio = largest_area / total_pixels
-            
-            if area_ratio > 0.8:  # %80'den fazla tek homojen alan varsa
-                return False, f"Görüntü çok homojen (Ana alan: %{area_ratio*100:.1f}). Cilt lezyonları daha detaylı yapıda olmalıdır."
+        # 9. BASİT DETAY KONTROLÜ - Sadece tamamen düz renkli yüzeyler için
+        std_dev = np.std(gray)
+        if std_dev < 3:  # Standart sapma çok düşükse (neredeyse hiç detay yok)
+            return False, f"Görüntü tamamen düz renkli (Detay seviyesi: {std_dev:.1f}). Bu tek renkli bir yüzey gibi görünüyor."
         
         # 10. MİN/MAX BOYUT KONTROLÜ
         if image.shape[0] < 100 or image.shape[1] < 100:
