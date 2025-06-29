@@ -11,6 +11,7 @@ from pathlib import Path
 import cv2
 from datetime import datetime
 from urllib.parse import quote as url_quote
+import io
 
 # Encoding ayarları
 import locale
@@ -194,6 +195,15 @@ def predict_skin_lesion(image_path):
         ]
         return demo_results, None
     
+    # ÖNEMLİ: Cilt benzeri görüntü kontrolü
+    print("🔍 Cilt tespiti yapılıyor...")
+    is_skin, skin_message = is_skin_like_image(image_path)
+    if not is_skin:
+        print(f"❌ Cilt tespiti başarısız: {skin_message}")
+        return None, f"HATA: {skin_message}. Lütfen cilt lezyonu içeren bir fotoğraf yükleyin."
+    
+    print(f"✅ Cilt tespiti başarılı: {skin_message}")
+    
     # Görüntüyü hazırla
     processed_image = preprocess_image(image_path)
     if processed_image is None:
@@ -225,6 +235,15 @@ def predict_skin_lesion(image_path):
         results.sort(key=lambda x: x['confidence'], reverse=True)
         print(f"✅ {len(results)} sonuç hazırlandı")
         
+        # ÖNEMLİ: Tahmin güvenilirliği kontrolü
+        print("🔍 Tahmin güvenilirliği kontrol ediliyor...")
+        is_confident, confidence_message = validate_prediction_confidence(results)
+        if not is_confident:
+            print(f"❌ Güven kontrolü başarısız: {confidence_message}")
+            return None, f"UYARI: {confidence_message}"
+        
+        print(f"✅ Güven kontrolü başarılı: {confidence_message}")
+        
         return results, None
         
     except Exception as e:
@@ -246,26 +265,45 @@ def get_recommendation(results):
         
         recommendation = ""
         
+        # Güven seviyesine göre ek uyarılar
+        confidence_warning = ""
+        if confidence < 50:
+            confidence_warning = " ⚠️ DİKKAT: Tahmin güvenilirliği düşük - mutlaka uzman görüşü alın!"
+        elif confidence < 70:
+            confidence_warning = " ⚠️ Orta seviye güvenilirlik - doktor kontrolü önerilir."
+        
         if class_name == 'melanoma':
             if confidence > 70:
-                recommendation = "UYARI: Bu lezyon %{:.1f} ihtimalle melanom (kötü huylu) olabilir. DERHAL bir dermatoloğa başvurun!".format(confidence)
+                recommendation = "🚨 ACIL UYARI: Bu lezyon %{:.1f} ihtimalle melanom (kötü huylu) olabilir. DERHAL bir dermatoloğa başvurun!".format(confidence)
+            elif confidence > 50:
+                recommendation = "⚠️ UYARI: Bu lezyon %{:.1f} ihtimalle melanom olabilir. En kısa sürede bir dermatoloğa başvurun!".format(confidence)
             else:
-                recommendation = "Dikkat: Bu lezyon %{:.1f} ihtimalle melanom olabilir. Bir doktora danışmanızı öneririz.".format(confidence)
+                recommendation = "⚠️ Dikkat: Bu lezyon %{:.1f} ihtimalle melanom olabilir, ancak güven düzeyi düşük. Uzman değerlendirmesi şart!".format(confidence)
         
         elif class_name == 'benign':
             if confidence > 80:
-                recommendation = "Bu lezyon %{:.1f} ihtimalle iyi huylu görünüyor. Yine de düzenli kontrol önemlidir.".format(confidence)
+                recommendation = "✅ Bu lezyon %{:.1f} ihtimalle iyi huylu görünüyor. Yine de düzenli kontrol önemlidir.".format(confidence)
+            elif confidence > 60:
+                recommendation = "✅ Bu lezyon %{:.1f} ihtimalle iyi huylu görünüyor, ancak kesin tanı için doktor kontrolü önerilir.".format(confidence)
             else:
-                recommendation = "Bu lezyon %{:.1f} ihtimalle iyi huylu görünüyor, ancak kesin tanı için doktor kontrolü önerilir.".format(confidence)
+                recommendation = "⚠️ Lezyon %{:.1f} ihtimalle iyi huylu görünüyor, ancak güven düzeyi düşük. Doktor değerlendirmesi şart!".format(confidence)
         
         elif class_name == 'nevus':
             if confidence > 80:
-                recommendation = "Bu %{:.1f} ihtimalle bir nevüs (ben) görünüyor. Genellikle zararsızdır, ancak değişiklikleri takip edin.".format(confidence)
+                recommendation = "✅ Bu %{:.1f} ihtimalle bir nevüs (ben) görünüyor. Genellikle zararsızdır, ancak değişiklikleri takip edin.".format(confidence)
+            elif confidence > 60:
+                recommendation = "✅ Bu %{:.1f} ihtimalle bir nevüs (ben) görünüyor. Şüpheniz varsa bir dermatoloğa danışın.".format(confidence)
             else:
-                recommendation = "Bu %{:.1f} ihtimalle bir nevüs (ben) görünüyor. Şüpheniz varsa bir dermatoloğa danışın.".format(confidence)
+                recommendation = "⚠️ Bu %{:.1f} ihtimalle bir nevüs (ben) görünüyor, ancak güven düzeyi düşük. Uzman kontrolü önerilir.".format(confidence)
         
         else:
-            recommendation = "Belirsiz sonuç. Bir uzman görüşü alınması önerilir."
+            recommendation = "❓ Belirsiz sonuç. Bir uzman görüşü alınması şart."
+        
+        # Güven uyarısını ekle
+        recommendation += confidence_warning
+        
+        # Genel uyarı ekle
+        recommendation += "\n\n📋 Önemli: Bu analiz sadece yardımcı bir araçtır, kesin tanı için mutlaka bir dermatoloğa başvurun!"
             
         print(f"✅ Öneri oluşturuldu: {len(recommendation)} karakter")
         return recommendation
@@ -326,6 +364,167 @@ def get_abcde_analysis(results):
     except Exception as e:
         print(f"❌ ABCDE analizi hatası: {str(e)}")
         return {}
+
+def is_skin_like_image(image_path):
+    """Görüntünün cilt lezyonu olup olmadığını çok sıkı kriterlere göre kontrol eder."""
+    try:
+        # Görüntüyü yükle
+        image = cv2.imread(image_path)
+        if image is None:
+            return False, "Görüntü okunamadı"
+        
+        # RGB'ye çevir
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        
+        # HSV formatına çevir (cilt tespiti için)
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        print(f"🔍 Görüntü boyutu: {image.shape[0]}x{image.shape[1]}")
+        
+        # 1. BOYUT KONTROLÜ - Çok büyük görüntüler genelde portre/genel fotoğraf
+        if image.shape[0] > 800 or image.shape[1] > 800:
+            return False, "Görüntü çok büyük (>800px). Cilt lezyonu fotoğrafları genellikle daha küçük ve odaklanmış olmalıdır."
+        
+        # 2. EN-BOY ORANI KONTROLÜ - Çok dikdörtgen görüntüler şüpheli
+        aspect_ratio = max(image.shape[0], image.shape[1]) / min(image.shape[0], image.shape[1])
+        if aspect_ratio > 2.0:
+            return False, "Görüntü en-boy oranı uygun değil. Cilt lezyonu fotoğrafları kare ya da hafif dikdörtgen olmalıdır."
+        
+        # 3. YÜZ TESPİTİ - Yüz varsa reddet
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+        if len(faces) > 0:
+            return False, "Görüntüde yüz tespit edildi. Bu bir portre fotoğrafı gibi görünüyor, cilt lezyonu fotoğrafı değil."
+        
+        # 4. GÖZ TESPİTİ - Ek güvenlik önlemi
+        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+        eyes = eye_cascade.detectMultiScale(gray, 1.1, 4)
+        if len(eyes) > 0:
+            return False, "Görüntüde göz tespit edildi. Bu bir portre fotoğrafı gibi görünüyor."
+        
+        # 5. ÇOKLU RENK KONTROLÜ - Çok renkli görüntüler şüpheli
+        # Benzersiz renk sayısını hesapla
+        unique_colors = len(np.unique(image_rgb.reshape(-1, image_rgb.shape[2]), axis=0))
+        color_density = unique_colors / (image.shape[0] * image.shape[1])
+        
+        if color_density > 0.3:  # Çok fazla farklı renk varsa
+            return False, f"Görüntü çok renkli ve karmaşık (Renk yoğunluğu: {color_density:.3f}). Cilt lezyonu fotoğrafları daha sade olmalıdır."
+        
+        # 6. KENAR TESPİTİ - Çok fazla kenar varsa karmaşık görüntü
+        edges = cv2.Canny(gray, 50, 150)
+        edge_ratio = np.count_nonzero(edges) / (image.shape[0] * image.shape[1])
+        
+        if edge_ratio > 0.15:  # %15'ten fazla kenar varsa
+            return False, f"Görüntü çok karmaşık (Kenar oranı: %{edge_ratio*100:.1f}). Cilt lezyonu fotoğrafları daha basit yapıda olmalıdır."
+        
+        # 7. CILT RENGİ TESPİTİ - Daha sıkı aralıklar
+        # Sadece çok spesifik cilt lezyonu renkleri
+        lower_lesion_1 = np.array([0, 30, 50], dtype=np.uint8)   # Koyu kahverengi
+        upper_lesion_1 = np.array([15, 255, 200], dtype=np.uint8)
+        
+        lower_lesion_2 = np.array([15, 20, 30], dtype=np.uint8)  # Açık kahverengi  
+        upper_lesion_2 = np.array([25, 255, 180], dtype=np.uint8)
+        
+        mask1 = cv2.inRange(hsv, lower_lesion_1, upper_lesion_1)
+        mask2 = cv2.inRange(hsv, lower_lesion_2, upper_lesion_2)
+        lesion_mask = cv2.bitwise_or(mask1, mask2)
+        
+        total_pixels = image.shape[0] * image.shape[1]
+        lesion_pixels = cv2.countNonZero(lesion_mask)
+        lesion_ratio = lesion_pixels / total_pixels
+        
+        print(f"🔍 Lezyon benzeri renk oranı: {lesion_ratio:.3f}")
+        
+        if lesion_ratio < 0.30:  # En az %30 lezyon benzeri renk olmalı
+            return False, f"Görüntüde yeterli lezyon benzeri renk bulunamadı (Oran: %{lesion_ratio*100:.1f}). Tipik cilt lezyonu renkleri tespit edilmedi."
+        
+        # 8. ÇOK PARLAK/KOYU KONTROL
+        mean_brightness = np.mean(gray)
+        if mean_brightness > 200:
+            return False, "Görüntü çok parlak. Cilt lezyonu fotoğrafları genellikle orta tonlarda olur."
+        if mean_brightness < 30:
+            return False, "Görüntü çok koyu. Cilt lezyonu detayları görünmüyor."
+        
+        # 9. HOMOJEN ALAN KONTROLÜ - Çok büyük düz alanlar varsa şüpheli
+        blur = cv2.GaussianBlur(gray, (15, 15), 0)
+        _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if contours:
+            largest_contour = max(contours, key=cv2.contourArea)
+            largest_area = cv2.contourArea(largest_contour)
+            area_ratio = largest_area / total_pixels
+            
+            if area_ratio > 0.8:  # %80'den fazla tek homojen alan varsa
+                return False, f"Görüntü çok homojen (Ana alan: %{area_ratio*100:.1f}). Cilt lezyonları daha detaylı yapıda olmalıdır."
+        
+        # 10. MİN/MAX BOYUT KONTROLÜ
+        if image.shape[0] < 100 or image.shape[1] < 100:
+            return False, "Görüntü çok küçük (<100px). Cilt lezyonu detayları görülemez."
+        
+        if image.shape[0] < 150 and image.shape[1] < 150:
+            return False, "Görüntü boyutu yetersiz. En az 150x150 piksel olmalıdır."
+        
+        print(f"✅ Tüm testlerden geçti - Lezyon benzeri: %{lesion_ratio*100:.1f}")
+        return True, f"Cilt lezyonu benzeri görüntü tespit edildi (Lezyon renk oranı: %{lesion_ratio*100:.1f})"
+        
+    except Exception as e:
+        print(f"❌ Gelişmiş görüntü analizi hatası: {str(e)}")
+        return False, f"Görüntü analizi başarısız: {str(e)}"
+
+def validate_prediction_confidence(results):
+    """Tahmin güvenilirliğini çok sıkı kriterlere göre kontrol eder."""
+    try:
+        if not results:
+            return False, "Tahmin sonucu bulunamadı"
+        
+        # En yüksek confidence'ı al
+        best_confidence = results[0]['confidence']
+        best_class = results[0]['class']
+        
+        # ÇOK SIKTI MİNİMUM CONFIDENCE THRESHOLD
+        MIN_CONFIDENCE = 0.60  # %60 (eskiden %30 idi)
+        
+        if best_confidence < MIN_CONFIDENCE:
+            return False, f"Tahmin güvenilirliği çok düşük (%{best_confidence*100:.1f}). Bu görüntü kesin olarak cilt lezyonu içermiyor."
+        
+        # Tüm tahminlerin çok yakın olup olmadığını kontrol et
+        confidence_values = [r['confidence'] for r in results]
+        max_confidence = max(confidence_values)
+        second_max = sorted(confidence_values, reverse=True)[1] if len(confidence_values) > 1 else 0
+        third_max = sorted(confidence_values, reverse=True)[2] if len(confidence_values) > 2 else 0
+        
+        confidence_gap = max_confidence - second_max
+        
+        # Daha büyük fark gerekiyor
+        if confidence_gap < 0.20:  # %20'den az fark varsa (eskiden %10)
+            return False, f"Tahminler çok belirsiz (En iyi: %{max_confidence*100:.1f}, İkinci: %{second_max*100:.1f}). Kesin sonuç alamıyoruz."
+        
+        # Ek kontrol: En yüksek 2 tahmin toplamı diğerinden çok yüksek olmalı
+        top_two_sum = max_confidence + second_max
+        if top_two_sum < 0.80:  # En yüksek 2 tahmin toplamı %80'den az ise
+            return False, f"Toplam güven skoru yetersiz (%{top_two_sum*100:.1f}). Görüntü net şekilde tanımlanamıyor."
+        
+        # Melanom tahmini için ek sıkı kontrol
+        if best_class == 'melanoma' and best_confidence < 0.75:
+            return False, f"Melanom tahmini için güven seviyesi yetersiz (%{best_confidence*100:.1f}). En az %75 güven gerekiyor."
+        
+        # Nevus ve benign için de yüksek güven gerekiyor
+        if best_class in ['nevus', 'benign'] and best_confidence < 0.65:
+            return False, f"{best_class.title()} tahmini için güven seviyesi yetersiz (%{best_confidence*100:.1f}). En az %65 güven gerekiyor."
+        
+        # Diğer tahminlerin çok düşük olup olmadığını kontrol et
+        other_confidences = [r['confidence'] for r in results[1:]]
+        if other_confidences and max(other_confidences) > 0.35:  # İkinci en yüksek %35'ten fazla ise
+            return False, f"Tahminler arasında yeterli fark yok. İkinci tahmin de yüksek (%{max(other_confidences)*100:.1f})."
+        
+        print(f"✅ Sıkı güven kontrolü geçildi: {best_class} %{best_confidence*100:.1f} (fark: %{confidence_gap*100:.1f})")
+        return True, f"Yüksek güvenilirlik tahmin: {best_class} %{best_confidence*100:.1f}"
+        
+    except Exception as e:
+        print(f"❌ Sıkı confidence validation hatası: {str(e)}")
+        return False, f"Güven kontrolü başarısız: {str(e)}"
 
 # Flask rotaları
 @app.route('/')
