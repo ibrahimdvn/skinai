@@ -504,8 +504,8 @@ def is_skin_like_image(image_path):
         if image.shape[0] < 150 and image.shape[1] < 150:
             return False, "Görüntü boyutu yetersiz. En az 150x150 piksel olmalıdır."
         
-        print(f"✅ Tüm validation testlerden geçti - Cilt/lezyon renk oranı: %{lesion_ratio*100:.1f}")
-        return True, f"Cilt lezyonu analizi için uygun görüntü (Cilt renk oranı: %{lesion_ratio*100:.1f})"
+        print(f"✅ Tüm validation testlerden geçti - Cilt/lezyon renk oranı: %{skin_ratio*100:.1f}")
+        return True, f"Cilt lezyonu analizi için uygun görüntü (Cilt renk oranı: %{skin_ratio*100:.1f})"
         
     except Exception as e:
         print(f"❌ Gelişmiş görüntü analizi hatası: {str(e)}")
