@@ -34,11 +34,11 @@ venv.bak/
 instance/
 .webassets-cache
 
-# Model files (too large for git)
-model/*.h5
-model/*.hdf5
-*.h5
-*.hdf5
+# Model files (now handled by Git LFS)
+# model/*.h5
+# model/*.hdf5
+# *.h5
+# *.hdf5
 
 # Data files (too large)
 data/raw/*
