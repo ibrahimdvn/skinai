@@ -1,14 +1,9 @@
 [build]
-  command = "pip install -r requirements-netlify.txt"
   publish = "static"
-  
-[build.environment]
-  PYTHON_VERSION = "3.9"
+  command = "echo 'Static files only - no server-side processing'"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+[build.environment]
+  NODE_VERSION = "18"
 
 [[redirects]]
   from = "/*"
