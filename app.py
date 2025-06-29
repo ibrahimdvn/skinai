@@ -391,53 +391,82 @@ def is_skin_like_image(image_path):
         if aspect_ratio > 2.0:
             return False, "Görüntü en-boy oranı uygun değil. Cilt lezyonu fotoğrafları kare ya da hafif dikdörtgen olmalıdır."
         
-        # 3. YÜZ TESPİTİ - Yüz varsa reddet
+        # 3. YÜZ TESPİTİ - Büyük yüzler varsa reddet (daha az hassas)
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-        if len(faces) > 0:
-            return False, "Görüntüde yüz tespit edildi. Bu bir portre fotoğrafı gibi görünüyor, cilt lezyonu fotoğrafı değil."
+        faces = face_cascade.detectMultiScale(gray, 1.3, 6)  # Daha az hassas: 1.3, 6
+        large_faces = []
+        for (x, y, w, h) in faces:
+            face_area = w * h
+            total_area = image.shape[0] * image.shape[1]
+            face_ratio = face_area / total_area
+            if face_ratio > 0.1:  # Sadece büyük yüzler (%10'dan fazla alan kaplayanlar)
+                large_faces.append((x, y, w, h))
         
-        # 4. GÖZ TESPİTİ - Ek güvenlik önlemi
+        if len(large_faces) > 0:
+            return False, "Görüntüde büyük yüz tespit edildi. Bu bir portre fotoğrafı gibi görünüyor."
+        
+        # 4. GÖZ TESPİTİ - Sadece büyük gözler için uyarı
         eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-        eyes = eye_cascade.detectMultiScale(gray, 1.1, 4)
-        if len(eyes) > 0:
-            return False, "Görüntüde göz tespit edildi. Bu bir portre fotoğrafı gibi görünüyor."
+        eyes = eye_cascade.detectMultiScale(gray, 1.3, 5)  # Daha az hassas
+        large_eyes = []
+        for (x, y, w, h) in eyes:
+            eye_area = w * h
+            total_area = image.shape[0] * image.shape[1]
+            eye_ratio = eye_area / total_area
+            if eye_ratio > 0.02:  # Sadece büyük gözler (%2'den fazla)
+                large_eyes.append((x, y, w, h))
         
-        # 5. ÇOKLU RENK KONTROLÜ - Çok renkli görüntüler şüpheli
+        if len(large_eyes) > 1:  # En az 2 büyük göz varsa
+            return False, "Görüntüde göz çifti tespit edildi. Bu bir portre fotoğrafı gibi görünüyor."
+        
+        # 5. ÇOKLU RENK KONTROLÜ - Aşırı renkli görüntüler şüpheli (gevşetildi)
         # Benzersiz renk sayısını hesapla
         unique_colors = len(np.unique(image_rgb.reshape(-1, image_rgb.shape[2]), axis=0))
         color_density = unique_colors / (image.shape[0] * image.shape[1])
         
-        if color_density > 0.3:  # Çok fazla farklı renk varsa
-            return False, f"Görüntü çok renkli ve karmaşık (Renk yoğunluğu: {color_density:.3f}). Cilt lezyonu fotoğrafları daha sade olmalıdır."
+        if color_density > 0.5:  # %30'dan %50'ye gevşettik
+            return False, f"Görüntü aşırı renkli ve karmaşık (Renk yoğunluğu: {color_density:.3f}). Bu bir genel fotoğraf gibi görünüyor."
         
-        # 6. KENAR TESPİTİ - Çok fazla kenar varsa karmaşık görüntü
+        # 6. KENAR TESPİTİ - Aşırı karmaşık görüntüler şüpheli (gevşetildi)
         edges = cv2.Canny(gray, 50, 150)
         edge_ratio = np.count_nonzero(edges) / (image.shape[0] * image.shape[1])
         
-        if edge_ratio > 0.15:  # %15'ten fazla kenar varsa
-            return False, f"Görüntü çok karmaşık (Kenar oranı: %{edge_ratio*100:.1f}). Cilt lezyonu fotoğrafları daha basit yapıda olmalıdır."
+        if edge_ratio > 0.25:  # %15'ten %25'e gevşettik
+            return False, f"Görüntü aşırı karmaşık (Kenar oranı: %{edge_ratio*100:.1f}). Bu bir genel fotoğraf gibi görünüyor."
         
-        # 7. CILT RENGİ TESPİTİ - Daha sıkı aralıklar
-        # Sadece çok spesifik cilt lezyonu renkleri
-        lower_lesion_1 = np.array([0, 30, 50], dtype=np.uint8)   # Koyu kahverengi
-        upper_lesion_1 = np.array([15, 255, 200], dtype=np.uint8)
+        # 7. CILT RENGİ TESPİTİ - Genişletilmiş aralıklar (gerçek lezyonlar için)
+        # Cilt lezyonu renk aralıkları (daha geniş)
+        lower_lesion_1 = np.array([0, 15, 30], dtype=np.uint8)   # Koyu kahverengi/siyah
+        upper_lesion_1 = np.array([20, 255, 220], dtype=np.uint8)
         
-        lower_lesion_2 = np.array([15, 20, 30], dtype=np.uint8)  # Açık kahverengi  
-        upper_lesion_2 = np.array([25, 255, 180], dtype=np.uint8)
+        lower_lesion_2 = np.array([10, 10, 40], dtype=np.uint8)  # Orta kahverengi
+        upper_lesion_2 = np.array([30, 255, 200], dtype=np.uint8)
+        
+        lower_lesion_3 = np.array([20, 20, 60], dtype=np.uint8)  # Açık kahverengi/pembe
+        upper_lesion_3 = np.array([35, 255, 240], dtype=np.uint8)
+        
+        # Normal cilt rengi de kabul et (açık)
+        lower_skin = np.array([0, 10, 80], dtype=np.uint8)
+        upper_skin = np.array([25, 80, 255], dtype=np.uint8)
         
         mask1 = cv2.inRange(hsv, lower_lesion_1, upper_lesion_1)
         mask2 = cv2.inRange(hsv, lower_lesion_2, upper_lesion_2)
+        mask3 = cv2.inRange(hsv, lower_lesion_3, upper_lesion_3)
+        mask_skin = cv2.inRange(hsv, lower_skin, upper_skin)
+        
+        # Tüm maskeleri birleştir
         lesion_mask = cv2.bitwise_or(mask1, mask2)
+        lesion_mask = cv2.bitwise_or(lesion_mask, mask3)
+        lesion_mask = cv2.bitwise_or(lesion_mask, mask_skin)
         
         total_pixels = image.shape[0] * image.shape[1]
         lesion_pixels = cv2.countNonZero(lesion_mask)
         lesion_ratio = lesion_pixels / total_pixels
         
-        print(f"🔍 Lezyon benzeri renk oranı: {lesion_ratio:.3f}")
+        print(f"🔍 Cilt/lezyon benzeri renk oranı: {lesion_ratio:.3f}")
         
-        if lesion_ratio < 0.30:  # En az %30 lezyon benzeri renk olmalı
-            return False, f"Görüntüde yeterli lezyon benzeri renk bulunamadı (Oran: %{lesion_ratio*100:.1f}). Tipik cilt lezyonu renkleri tespit edilmedi."
+        if lesion_ratio < 0.15:  # %15'e düşürdük (eskiden %30 idi)
+            return False, f"Görüntüde yeterli cilt/lezyon benzeri renk bulunamadı (Oran: %{lesion_ratio*100:.1f}). Tipik cilt renkleri tespit edilmedi."
         
         # 8. ÇOK PARLAK/KOYU KONTROL
         mean_brightness = np.mean(gray)
@@ -466,8 +495,8 @@ def is_skin_like_image(image_path):
         if image.shape[0] < 150 and image.shape[1] < 150:
             return False, "Görüntü boyutu yetersiz. En az 150x150 piksel olmalıdır."
         
-        print(f"✅ Tüm testlerden geçti - Lezyon benzeri: %{lesion_ratio*100:.1f}")
-        return True, f"Cilt lezyonu benzeri görüntü tespit edildi (Lezyon renk oranı: %{lesion_ratio*100:.1f})"
+        print(f"✅ Tüm validation testlerden geçti - Cilt/lezyon renk oranı: %{lesion_ratio*100:.1f}")
+        return True, f"Cilt lezyonu analizi için uygun görüntü (Cilt renk oranı: %{lesion_ratio*100:.1f})"
         
     except Exception as e:
         print(f"❌ Gelişmiş görüntü analizi hatası: {str(e)}")
@@ -483,11 +512,11 @@ def validate_prediction_confidence(results):
         best_confidence = results[0]['confidence']
         best_class = results[0]['class']
         
-        # ÇOK SIKTI MİNİMUM CONFIDENCE THRESHOLD
-        MIN_CONFIDENCE = 0.60  # %60 (eskiden %30 idi)
+        # MAKUL MİNİMUM CONFIDENCE THRESHOLD  
+        MIN_CONFIDENCE = 0.45  # %45'e düşürdük (gerçek lezyonlar için makul)
         
         if best_confidence < MIN_CONFIDENCE:
-            return False, f"Tahmin güvenilirliği çok düşük (%{best_confidence*100:.1f}). Bu görüntü kesin olarak cilt lezyonu içermiyor."
+            return False, f"Tahmin güvenilirliği çok düşük (%{best_confidence*100:.1f}). Bu görüntü yeterince net değil."
         
         # Tüm tahminlerin çok yakın olup olmadığını kontrol et
         confidence_values = [r['confidence'] for r in results]
@@ -497,26 +526,21 @@ def validate_prediction_confidence(results):
         
         confidence_gap = max_confidence - second_max
         
-        # Daha büyük fark gerekiyor
-        if confidence_gap < 0.20:  # %20'den az fark varsa (eskiden %10)
-            return False, f"Tahminler çok belirsiz (En iyi: %{max_confidence*100:.1f}, İkinci: %{second_max*100:.1f}). Kesin sonuç alamıyoruz."
+        # Makul fark gerekiyor
+        if confidence_gap < 0.15:  # %15'e düşürdük (eskiden %20)
+            return False, f"Tahminler çok belirsiz (En iyi: %{max_confidence*100:.1f}, İkinci: %{second_max*100:.1f}). Net sonuç alamıyoruz."
         
-        # Ek kontrol: En yüksek 2 tahmin toplamı diğerinden çok yüksek olmalı
-        top_two_sum = max_confidence + second_max
-        if top_two_sum < 0.80:  # En yüksek 2 tahmin toplamı %80'den az ise
-            return False, f"Toplam güven skoru yetersiz (%{top_two_sum*100:.1f}). Görüntü net şekilde tanımlanamıyor."
+        # Melanom tahmini için daha sıkı kontrol (önemli!)
+        if best_class == 'melanoma' and best_confidence < 0.65:  # %75'ten %65'e düşürdük
+            return False, f"Melanom tahmini için güven seviyesi yetersiz (%{best_confidence*100:.1f}). En az %65 güven gerekiyor."
         
-        # Melanom tahmini için ek sıkı kontrol
-        if best_class == 'melanoma' and best_confidence < 0.75:
-            return False, f"Melanom tahmini için güven seviyesi yetersiz (%{best_confidence*100:.1f}). En az %75 güven gerekiyor."
+        # Nevus ve benign için makul güven
+        if best_class in ['nevus', 'benign'] and best_confidence < 0.50:  # %65'ten %50'ye düşürdük
+            return False, f"{best_class.title()} tahmini için güven seviyesi yetersiz (%{best_confidence*100:.1f}). En az %50 güven gerekiyor."
         
-        # Nevus ve benign için de yüksek güven gerekiyor
-        if best_class in ['nevus', 'benign'] and best_confidence < 0.65:
-            return False, f"{best_class.title()} tahmini için güven seviyesi yetersiz (%{best_confidence*100:.1f}). En az %65 güven gerekiyor."
-        
-        # Diğer tahminlerin çok düşük olup olmadığını kontrol et
+        # Diğer tahminlerin makul seviyede olup olmadığını kontrol et
         other_confidences = [r['confidence'] for r in results[1:]]
-        if other_confidences and max(other_confidences) > 0.35:  # İkinci en yüksek %35'ten fazla ise
+        if other_confidences and max(other_confidences) > 0.40:  # %35'ten %40'a çıkardık
             return False, f"Tahminler arasında yeterli fark yok. İkinci tahmin de yüksek (%{max(other_confidences)*100:.1f})."
         
         print(f"✅ Sıkı güven kontrolü geçildi: {best_class} %{best_confidence*100:.1f} (fark: %{confidence_gap*100:.1f})")
