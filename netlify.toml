@@ -1,8 +1,0 @@
-[build]
-publish = "static"
-command = "pip install -r requirements-netlify.txt"
-
-[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200 
