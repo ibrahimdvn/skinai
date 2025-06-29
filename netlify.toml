@@ -1,10 +1,7 @@
 [build]
-  publish = "static"
+publish = "static"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-[functions]
-  python_runtime = "python3.9" 
+from = "/*"
+to = "/index.html"
+status = 200 
