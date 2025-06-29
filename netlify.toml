@@ -1,9 +1,5 @@
 [build]
   publish = "static"
-  command = "echo 'Static files only - no server-side processing'"
-
-[build.environment]
-  NODE_VERSION = "18"
 
 [[redirects]]
   from = "/*"
