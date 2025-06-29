@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: skinai
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: RENDER
+        value: "true"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHON_VERSION
+        value: "3.9.18"
+    healthCheckPath: /
+    disk:
+      name: skinai-disk
+      mountPath: /uploads
+      sizeGB: 1 

@@ -76,16 +76,31 @@ def load_model_and_classes():
     """Eğitilmiş modeli ve sınıf bilgilerini yükler."""
     global model, class_info
     
-    model_path = 'model/skin_cancer_model.h5'
+    # Mevcut model dosyalarını kontrol et
+    model_files = [
+        'model/skin_cancer_model.h5',
+        'model/enhanced_model.h5', 
+        'model/ham10k_model.h5',
+        'model/best_model.h5',
+        'model/basic_cnn.h5'
+    ]
+    
+    model_path = None
+    for file_path in model_files:
+        if os.path.exists(file_path):
+            model_path = file_path
+            print(f"✅ Model dosyası bulundu: {model_path}")
+            break
+    
     class_info_path = 'model/class_info.json'
     
     try:
-        if os.path.exists(model_path):
+        if model_path:
             print("🧠 Model yükleniyor...")
             model = tf.keras.models.load_model(model_path)
             print("✅ Model başarıyla yüklendi!")
         else:
-            print("❌ Model dosyası bulunamadı!")
+            print("❌ Hiçbir model dosyası bulunamadı!")
             print("👉 Önce modeli eğitin: python model/train_model.py")
             
         if os.path.exists(class_info_path):
@@ -102,9 +117,12 @@ def load_model_and_classes():
                     'nevus': 'Nevüs (Ben) - Genellikle zararsız pigment lezyonu'
                 }
             }
+            print("⚠️ Varsayılan sınıf bilgileri kullanılıyor!")
             
     except Exception as e:
         print(f"❌ Model yüklenirken hata: {e}")
+        print("⚠️ Demo modunda çalışmaya devam ediliyor...")
+        model = None
 
 def allowed_file(filename):
     """Dosya formatının uygun olup olmadığını kontrol eder."""
@@ -152,7 +170,29 @@ def predict_skin_lesion(image_path):
     global model, class_info
     
     if model is None:
-        return None, "Model yüklenmedi!"
+        print("⚠️ Model yüklenmediği için demo sonuç döndürülüyor...")
+        # Demo sonuçları döndür
+        demo_results = [
+            {
+                'class': 'benign',
+                'confidence': 0.75,
+                'percentage': 75.0,
+                'description': 'İyi huylu lezyon - Genellikle zararsız (Demo)'
+            },
+            {
+                'class': 'nevus', 
+                'confidence': 0.20,
+                'percentage': 20.0,
+                'description': 'Nevüs (Ben) - Genellikle zararsız pigment lezyonu (Demo)'
+            },
+            {
+                'class': 'melanoma',
+                'confidence': 0.05,
+                'percentage': 5.0,
+                'description': 'Melanom - Kötü huylu, acil tıbbi müdahale gerekli (Demo)'
+            }
+        ]
+        return demo_results, None
     
     # Görüntüyü hazırla
     processed_image = preprocess_image(image_path)
@@ -248,7 +288,7 @@ def get_abcde_analysis(results):
         if class_name == 'melanoma':
             if confidence > 80:
                 abcde = {
-                    'A': {'title': 'Asimetri', 'desc': 'Lezyonun iki yarısı arasında belirgin farklılık görülebilir', 'risk': 'high'},
+                    'A': {'title': 'Asimetri', 'desc': 'Lezyonun iki yarısı arasında belirgin farklılık gözlemlenebilir', 'risk': 'high'},
                     'B': {'title': 'Sınır', 'desc': 'Kenarlar düzensiz, dalgalı veya belirsiz olabilir', 'risk': 'high'},
                     'C': {'title': 'Renk', 'desc': 'Kahverengi, siyah, kırmızı tonlarda çoklu renk değişimi', 'risk': 'high'},
                     'D': {'title': 'Çap', 'desc': '6mm\'den büyük boyutlarda olma riski yüksek', 'risk': 'high'},
@@ -291,7 +331,7 @@ def get_abcde_analysis(results):
 @app.route('/')
 def index():
     """Ana sayfa."""
-    return render_template('index.html')
+    return render_template('index.html', model_loaded=(model is not None))
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -373,7 +413,8 @@ def upload_file():
                                                   results=safe_results, 
                                                   recommendation=safe_recommendation,
                                                   abcde_analysis=abcde_analysis,
-                                                  image_path=safe_filename)
+                                                  image_path=safe_filename,
+                                                  model_loaded=(model is not None))
                 print("✅ Template başarıyla render edildi!")
                 return rendered_template
                 
@@ -386,7 +427,8 @@ def upload_file():
                                          results=safe_results, 
                                          recommendation=safe_recommendation,
                                          abcde_analysis=abcde_analysis,
-                                         image_path=safe_filename)
+                                         image_path=safe_filename,
+                                         model_loaded=(model is not None))
                 except Exception as simple_error:
                     print(f"❌ Basit template de başarısız: {str(simple_error)}")
                     flash('Görüntü gösteriminde sorun oluştu.', 'error')
@@ -591,7 +633,21 @@ if __name__ == '__main__':
         print("👉 Daha sonra web uygulamasını tekrar başlatın.")
         print("\n🔄 Yine de demo modunda başlatılıyor...")
     
-    print(f"\n🌐 Uygulama başlatılıyor: http://localhost:5000")
+    # Production için port ayarını çevre değişkeninden al
+    port = int(os.environ.get('PORT', 5000))
+    
+    print(f"\n🌐 Uygulama başlatılıyor: http://localhost:{port}")
     print("✨ SkinAI ile cilt lekesi analizi yapabilirsiniz!")
     
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    # Production ve development ortamını ayırt et
+    if os.environ.get('RENDER'):
+        # Render ortamında production modu
+        print("🔧 Production mode (Render)")
+        app.run(host='0.0.0.0', port=port, debug=False)
+    else:
+        # Local development
+        print("🔧 Development mode")
+        app.run(debug=True, host='0.0.0.0', port=port)
+else:
+    # Gunicorn ile çalıştırıldığında modeli yükle
+    load_model_and_classes() 
