@@ -434,40 +434,50 @@ def is_skin_like_image(image_path):
         if edge_ratio > 0.25:  # %15'ten %25'e gevşettik
             return False, f"Görüntü aşırı karmaşık (Kenar oranı: %{edge_ratio*100:.1f}). Bu bir genel fotoğraf gibi görünüyor."
         
-        # 7. CILT RENGİ TESPİTİ - ULTRA GENİŞ ARALIKLAR (tüm cilt tonları için)
-        # Çok geniş cilt ve lezyon renk aralıkları
+        # 7. CILT RENGİ TESPİTİ - MEGA GENİŞ ARALIKLAR (açık tonlar için özel)
+        # Neredeyse tüm renkleri kabul eden çok geniş aralıklar
         
-        # 1. Koyu kahverengi/siyah lezyonlar
+        # 1. AÇIK CILT/LEZYON TONLARI (en geniş aralık)
+        lower_very_light = np.array([0, 0, 80], dtype=np.uint8)   # Çok açık
+        upper_very_light = np.array([180, 30, 255], dtype=np.uint8)  # Neredeyse tüm açık renkler
+        
+        # 2. ORTA AÇIK TONLAR
+        lower_light = np.array([0, 0, 60], dtype=np.uint8)  
+        upper_light = np.array([180, 60, 255], dtype=np.uint8)
+        
+        # 3. ORTA TONLAR
+        lower_medium = np.array([0, 0, 40], dtype=np.uint8)  
+        upper_medium = np.array([180, 120, 255], dtype=np.uint8)
+        
+        # 4. KOYU TONLAR
         lower_dark = np.array([0, 0, 20], dtype=np.uint8)   
-        upper_dark = np.array([25, 255, 120], dtype=np.uint8)
+        upper_dark = np.array([180, 255, 180], dtype=np.uint8)
         
-        # 2. Orta ton kahverengi lezyonlar  
-        lower_medium = np.array([0, 0, 50], dtype=np.uint8)  
-        upper_medium = np.array([30, 255, 180], dtype=np.uint8)
+        # 5. ÇOK KOYU TONLAR
+        lower_very_dark = np.array([0, 0, 10], dtype=np.uint8)
+        upper_very_dark = np.array([180, 255, 120], dtype=np.uint8)
         
-        # 3. Açık kahverengi/pembe lezyonlar
-        lower_light = np.array([0, 0, 80], dtype=np.uint8)  
-        upper_light = np.array([35, 255, 255], dtype=np.uint8)
+        # 6. TÜM PEMBE/KIRMIZI TONLAR (açık lezyonlar için)
+        lower_pink = np.array([0, 0, 50], dtype=np.uint8)
+        upper_pink = np.array([20, 255, 255], dtype=np.uint8)
         
-        # 4. Normal açık cilt tonları
-        lower_skin1 = np.array([0, 0, 100], dtype=np.uint8)
-        upper_skin1 = np.array([30, 100, 255], dtype=np.uint8)
+        # 7. TÜM SARI/TURUNCU TONLAR
+        lower_yellow = np.array([20, 0, 50], dtype=np.uint8)
+        upper_yellow = np.array([40, 255, 255], dtype=np.uint8)
         
-        # 5. Orta cilt tonları
-        lower_skin2 = np.array([0, 0, 60], dtype=np.uint8)
-        upper_skin2 = np.array([40, 150, 220], dtype=np.uint8)
+        # 8. GERI KALAN TÜM RENKLER (backup)
+        lower_all = np.array([0, 0, 30], dtype=np.uint8)
+        upper_all = np.array([180, 80, 255], dtype=np.uint8)
         
-        # 6. Koyu cilt tonları
-        lower_skin3 = np.array([0, 0, 30], dtype=np.uint8)
-        upper_skin3 = np.array([25, 200, 150], dtype=np.uint8)
-        
-        # Tüm maskeleri oluştur
-        mask1 = cv2.inRange(hsv, lower_dark, upper_dark)
-        mask2 = cv2.inRange(hsv, lower_medium, upper_medium)
-        mask3 = cv2.inRange(hsv, lower_light, upper_light)
-        mask4 = cv2.inRange(hsv, lower_skin1, upper_skin1)
-        mask5 = cv2.inRange(hsv, lower_skin2, upper_skin2)
-        mask6 = cv2.inRange(hsv, lower_skin3, upper_skin3)
+        # Tüm maskeleri oluştur (8 farklı aralık)
+        mask1 = cv2.inRange(hsv, lower_very_light, upper_very_light)
+        mask2 = cv2.inRange(hsv, lower_light, upper_light)
+        mask3 = cv2.inRange(hsv, lower_medium, upper_medium)
+        mask4 = cv2.inRange(hsv, lower_dark, upper_dark)
+        mask5 = cv2.inRange(hsv, lower_very_dark, upper_very_dark)
+        mask6 = cv2.inRange(hsv, lower_pink, upper_pink)
+        mask7 = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        mask8 = cv2.inRange(hsv, lower_all, upper_all)
         
         # Tüm maskeleri birleştir
         final_mask = cv2.bitwise_or(mask1, mask2)
@@ -475,6 +485,8 @@ def is_skin_like_image(image_path):
         final_mask = cv2.bitwise_or(final_mask, mask4)
         final_mask = cv2.bitwise_or(final_mask, mask5)
         final_mask = cv2.bitwise_or(final_mask, mask6)
+        final_mask = cv2.bitwise_or(final_mask, mask7)
+        final_mask = cv2.bitwise_or(final_mask, mask8)
         
         total_pixels = image.shape[0] * image.shape[1]
         skin_pixels = cv2.countNonZero(final_mask)
@@ -482,8 +494,8 @@ def is_skin_like_image(image_path):
         
         print(f"🔍 Cilt/lezyon benzeri renk oranı: {skin_ratio:.3f}")
         
-        if skin_ratio < 0.08:  # %8'e düşürdük (çok daha toleranslı)
-            return False, f"Görüntüde hiç cilt benzeri renk bulunamadı (Oran: %{skin_ratio*100:.1f}). Bu bir cilt fotoğrafı değil gibi görünüyor."
+        if skin_ratio < 0.02:  # %8'den %2'ye düşürdük (ultra toleranslı)
+            return False, f"Görüntü tamamen beyaz/siyah gibi görünüyor (Oran: %{skin_ratio*100:.1f}). Bu hiç cilt benzeri renk içermiyor."
         
         # 8. ÇOK PARLAK/KOYU KONTROL (gevşetildi)
         mean_brightness = np.mean(gray)
