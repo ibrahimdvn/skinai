@@ -1,0 +1,14 @@
+Flask==3.1.1
+tf-nightly==2.20.0.dev20250626
+keras-nightly>=3.6.0.dev
+numpy==2.3.0
+opencv-python==4.11.0.86
+matplotlib==3.10.3
+pandas==2.3.0
+scikit-learn==1.7.0
+seaborn==0.13.2
+Pillow>=10.0.0
+Werkzeug>=3.1.0
+kaggle>=1.6.0
+requests>=2.32.0
+tqdm>=4.66.0 

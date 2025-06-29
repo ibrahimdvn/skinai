@@ -1,0 +1,21 @@
+{
+  "class_names": [
+    "benign",
+    "melanoma",
+    "nevus"
+  ],
+  "class_descriptions": {
+    "benign": "İyi huylu lezyon - Genellikle zararsız",
+    "melanoma": "Melanom - Kötü huylu, acil tıbbi müdahale gerekli",
+    "nevus": "Nevüs (Ben) - Genellikle zararsız pigment lezyonu"
+  },
+  "model_info": {
+    "architecture": "Basic CNN from scratch",
+    "input_size": [
+      64,
+      64
+    ],
+    "total_params": 691651,
+    "working": true
+  }
+}

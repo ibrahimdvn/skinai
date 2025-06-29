@@ -1,0 +1,17 @@
+{
+  "model_name": "ham10k_model.h5",
+  "dataset": "HAM10000",
+  "classes": [
+    "benign",
+    "melanoma",
+    "nevus"
+  ],
+  "total_samples": 10015,
+  "class_distribution": {
+    "nevus": 6705,
+    "benign": 2197,
+    "melanoma": 1113
+  },
+  "test_accuracy": 0.11077844351530075,
+  "test_loss": 1.10616135597229
+}

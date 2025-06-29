@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}SkinAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <h1 class="hero-title">🩺 SkinAI</h1>
+            <p class="hero-subtitle text-white">
+                Yapay zeka destekli cilt lekesi analizi sistemi
+            </p>
+            <!-- Model Performance Badge -->
+            <div class="mt-3">
+                <span class="badge bg-success fs-6 px-3 py-2">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Model Doğruluğu: 92.5%
+                </span>
+                <span class="badge bg-info fs-6 px-3 py-2 ms-2">
+                    <i class="fas fa-database me-2"></i>
+                    8,858 Görüntü ile Eğitildi
+                </span>
+            </div>
+        </div>
+
+        <!-- Upload Card -->
+        <div class="card">
+            <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                <h4 class="text-center mb-0">
+                    <i class="fas fa-upload text-primary me-2"></i>
+                    Cilt Lekesi Fotoğrafı Yükle
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <div class="file-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h5 class="mb-3">Fotoğraf Seçin veya Sürükleyip Bırakın</h5>
+                        <p class="text-muted mb-3">
+                            Desteklenen formatlar: JPG, PNG, GIF, BMP<br>
+                            Maksimum dosya boyutu: 16MB
+                        </p>
+                        <input type="file" 
+                               id="fileInput" 
+                               name="file" 
+                               accept=".jpg,.jpeg,.png,.gif,.bmp" 
+                               required 
+                               style="display: none;">
+                        <div class="mt-3">
+                            <span class="badge bg-light text-dark" id="fileName">Dosya seçilmedi</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="analyzeBtn">
+                            <i class="fas fa-search me-2"></i>
+                            Analiz Et
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="row mt-5">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-3">
+                            <i class="fas fa-check-circle fa-3x"></i>
+                        </div>
+                        <h6 class="card-title">İyi Huylu (Benign)</h6>
+                        <p class="card-text small text-muted">
+                            Genellikle zararsız lezyonlar. Düzenli takip önerilir.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="text-danger mb-3">
+                            <i class="fas fa-exclamation-triangle fa-3x"></i>
+                        </div>
+                        <h6 class="card-title">Melanom</h6>
+                        <p class="card-text small text-muted">
+                            Kötü huylu deri kanseri. Acil tıbbi müdahale gereklidir.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="text-warning mb-3">
+                            <i class="fas fa-circle fa-3x"></i>
+                        </div>
+                        <h6 class="card-title">Nevüs (Ben)</h6>
+                        <p class="card-text small text-muted">
+                            Pigment lezyonu. Değişiklikleri takip edilmelidir.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Instructions -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle text-info me-2"></i>
+                    Nasıl Kullanılır?
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-camera text-primary me-2"></i>Fotoğraf Çekme İpuçları:</h6>
+                        <ul class="small">
+                            <li>Lezyonu net bir şekilde çekin</li>
+                            <li>Yeterli ışık kullanın</li>
+                            <li>Lezyonu tam ortalayın</li>
+                            <li>Yakından çekin (detaylar görünsün)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-shield-alt text-success me-2"></i>Güvenlik:</h6>
+                        <ul class="small">
+                            <li>Yüklenen fotoğraflar geçicidir</li>
+                            <li>Kişisel bilgiler saklanmaz</li>
+                            <li>Güvenli analiz süreci</li>
+                            <li>Hızlı sonuç alın</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const uploadForm = document.getElementById('uploadForm');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+
+    uploadForm.addEventListener('submit', function(e) {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('Lütfen bir dosya seçin!');
+            return;
+        }
+
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analiz Ediliyor...';
+        analyzeBtn.disabled = true;
+    });
+
+    // Drag and drop functionality
+    const uploadArea = document.querySelector('.upload-area');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        uploadArea.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        uploadArea.classList.remove('dragover');
+    }
+
+    // Handle drop
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            fileInput.files = files;
+            const file = files[0];
+            fileName.textContent = file.name;
+            fileName.className = 'badge bg-success text-white';
+        }
+    }
+
+    // Mobile touch improvements
+    uploadArea.addEventListener('touchstart', function(e) {
+        uploadArea.style.transform = 'scale(0.98)';
+    });
+
+    uploadArea.addEventListener('touchend', function(e) {
+        uploadArea.style.transform = 'scale(1)';
+    });
+
+    // File size validation
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const maxSize = 16 * 1024 * 1024; // 16MB
+            
+            if (file.size > maxSize) {
+                alert('Dosya boyutu çok büyük! Maksimum 16MB olmalıdır.');
+                e.target.value = '';
+                fileName.textContent = 'Dosya seçilmedi';
+                fileName.className = 'badge bg-light text-dark';
+                return;
+            }
+            
+            fileName.textContent = file.name;
+            fileName.className = 'badge bg-success text-white';
+        } else {
+            fileName.textContent = 'Dosya seçilmedi';
+            fileName.className = 'badge bg-light text-dark';
+        }
+    });
+
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            fileInput.files = files;
+            fileName.textContent = files[0].name;
+            fileName.className = 'badge bg-success text-white';
+        }
+    }
+});
+</script>
+{% endblock %} 

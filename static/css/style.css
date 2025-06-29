@@ -1,0 +1,123 @@
+/* Mobile-First Design */
+.upload-area {
+    border: 3px dashed #dee2e6;
+    border-radius: 20px;
+    padding: 2rem 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-area.dragover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.file-icon {
+    font-size: 3rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.prediction-card.melanoma {
+    border-left: 5px solid #dc3545;
+}
+
+.prediction-card.benign {
+    border-left: 5px solid #28a745;
+}
+
+.prediction-card.nevus {
+    border-left: 5px solid #ffc107;
+}
+
+/* Mobile Responsive Styles */
+@media (min-width: 768px) {
+    .upload-area {
+        padding: 3rem 2rem;
+        min-height: 250px;
+    }
+    
+    .file-icon {
+        font-size: 4rem;
+    }
+}
+
+/* Touch-friendly buttons */
+@media (max-width: 767px) {
+    .btn {
+        min-height: 48px;
+        font-size: 1rem;
+        padding: 12px 24px;
+    }
+    
+    .btn-lg {
+        min-height: 56px;
+        font-size: 1.1rem;
+        padding: 16px 32px;
+    }
+    
+    .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .upload-area {
+        border-width: 2px;
+        margin: 0.5rem 0;
+    }
+    
+    .upload-area h5 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .upload-area p {
+        font-size: 0.9rem;
+    }
+    
+    .badge {
+        font-size: 0.8rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 575px) {
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .card {
+        margin: 0.5rem 0;
+        border-radius: 15px;
+    }
+    
+    .upload-area {
+        padding: 1.5rem 1rem;
+        min-height: 180px;
+    }
+    
+    .file-icon {
+        font-size: 2.5rem;
+    }
+    
+    .upload-area h5 {
+        font-size: 1rem;
+    }
+    
+    .upload-area p {
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+    }
+} 
