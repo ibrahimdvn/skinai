@@ -1,5 +1,6 @@
 [build]
 publish = "static"
+command = "pip install -r requirements-netlify.txt"
 
 [[redirects]]
 from = "/*"
